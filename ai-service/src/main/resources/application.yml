@@ -1,0 +1,44 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: ai-service
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:bankstatement}
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    schemas: ai
+
+oci:
+  tenancy-id: ${OCI_TENANCY_ID:}
+  user-id: ${OCI_USER_ID:}
+  fingerprint: ${OCI_FINGERPRINT:}
+  private-key-path: ${OCI_PRIVATE_KEY_PATH:}
+  region: ${OCI_REGION:us-ashburn-1}
+  bucket-name: ${OCI_BUCKET_NAME:bank-statements}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.bankstatement.ai: DEBUG

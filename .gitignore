@@ -1,0 +1,31 @@
+# Maven
+target/
+*.jar
+*.war
+*.class
+.mvn/
+mvnw
+mvnw.cmd
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.DS_Store
+
+# Environment
+.env
+*.env
+application-local.yml
+application-local.properties
+
+# OCI
+oci_api_key.pem
+oci_config
+
+# Logs
+*.log
+logs/
+
+# Docker
+docker-compose.override.yml
