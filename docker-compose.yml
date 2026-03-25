@@ -1,0 +1,136 @@
+version: '3.8'
+
+services:
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: bankstatement-postgres
+    environment:
+      POSTGRES_DB: bankstatement
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - bankstatement-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    networks:
+      - bankstatement-network
+    depends_on:
+      - auth-service
+      - statement-service
+      - ai-service
+      - alert-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    ports:
+      - "8081:8081"
+    networks:
+      - bankstatement-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=bankstatement
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - SPRING_PROFILES_ACTIVE=docker
+
+  statement-service:
+    build:
+      context: ./statement-service
+      dockerfile: Dockerfile
+    container_name: statement-service
+    ports:
+      - "8082:8082"
+    networks:
+      - bankstatement-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=bankstatement
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - SPRING_PROFILES_ACTIVE=docker
+
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: ai-service
+    ports:
+      - "8083:8083"
+    networks:
+      - bankstatement-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=bankstatement
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - OCI_TENANCY_ID=${OCI_TENANCY_ID}
+      - OCI_USER_ID=${OCI_USER_ID}
+      - OCI_FINGERPRINT=${OCI_FINGERPRINT}
+      - OCI_PRIVATE_KEY_PATH=${OCI_PRIVATE_KEY_PATH}
+      - OCI_REGION=${OCI_REGION}
+      - OCI_BUCKET_NAME=${OCI_BUCKET_NAME}
+      - SPRING_PROFILES_ACTIVE=docker
+
+  alert-service:
+    build:
+      context: ./alert-service
+      dockerfile: Dockerfile
+    container_name: alert-service
+    ports:
+      - "8084:8084"
+    networks:
+      - bankstatement-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=bankstatement
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - SPRING_PROFILES_ACTIVE=docker
+
+networks:
+  bankstatement-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
