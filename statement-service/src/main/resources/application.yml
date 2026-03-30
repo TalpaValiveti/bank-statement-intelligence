@@ -16,7 +16,6 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
   flyway:
     enabled: true
     locations: classpath:db/migration
@@ -27,14 +26,23 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
 
+services:
+  ai-service:
+    url: ${AI_SERVICE_URL:http://localhost:8083}
+  alert-service:
+    url: ${ALERT_SERVICE_URL:http://localhost:8084}
+
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics
   endpoint:
     health:
       show-details: always
+  health:
+    defaults:
+      enabled: true
 
 logging:
   level:
