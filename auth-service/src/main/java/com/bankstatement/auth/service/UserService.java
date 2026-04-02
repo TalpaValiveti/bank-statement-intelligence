@@ -20,6 +20,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     public AuthResponse register(RegisterRequest request) {
         log.info("Registering user with email: {}", request.getEmail());
@@ -43,8 +44,10 @@ public class UserService {
         User saved = userRepository.save(user);
         log.info("User registered successfully with id: {}", saved.getId());
 
+        String token = jwtService.generateToken(saved);
+
         return AuthResponse.builder()
-                .token(null)
+                .token(token)
                 .tokenType("Bearer")
                 .userId(saved.getId())
                 .username(saved.getUsername())
@@ -70,14 +73,16 @@ public class UserService {
 
         log.info("Login successful for userId: {}", user.getId());
 
+        String token = jwtService.generateToken(user);
+
         return AuthResponse.builder()
-                .token(null)
+                .token(token)
                 .tokenType("Bearer")
                 .userId(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .role(user.getRole().name())
-                .message("Login successful — JWT coming in Day 7")
+                .message("Login successful")
                 .build();
     }
 }
