@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -63,5 +64,29 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("valid", false, "error", e.getMessage()));
         }
+    }
+
+    @GetMapping("/admin/users")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> adminOnly() {
+        return ResponseEntity.ok(Map.of(
+                "message", "Admin access granted",
+                "role", "ADMIN"
+        ));
+    }
+
+    @GetMapping("/me")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN', 'MANAGER')")
+    public ResponseEntity<Map<String, Object>> getCurrentUser(
+            @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        String email = jwtService.extractEmail(token);
+        Long userId = jwtService.extractUserId(token);
+        String role = jwtService.extractRole(token);
+        return ResponseEntity.ok(Map.of(
+                "email", email,
+                "userId", userId,
+                "role", role
+        ));
     }
 }

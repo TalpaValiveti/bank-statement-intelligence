@@ -13,6 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -23,7 +25,15 @@ public class UserService {
     private final JwtService jwtService;
 
     public AuthResponse register(RegisterRequest request) {
-        log.info("Registering user with email: {}", request.getEmail());
+        return registerWithRole(request, Role.USER);
+    }
+
+    public AuthResponse registerAdmin(RegisterRequest request) {
+        return registerWithRole(request, Role.ADMIN);
+    }
+
+    private AuthResponse registerWithRole(RegisterRequest request, Role role) {
+        log.info("Registering user with email: {} and role: {}", request.getEmail(), role);
 
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new UserAlreadyExistsException("Email already registered: " + request.getEmail());
@@ -37,12 +47,12 @@ public class UserService {
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.USER)
+                .role(role)
                 .enabled(true)
                 .build();
 
         User saved = userRepository.save(user);
-        log.info("User registered successfully with id: {}", saved.getId());
+        log.info("User registered with id: {} and role: {}", saved.getId(), role);
 
         String token = jwtService.generateToken(saved);
 
@@ -84,5 +94,9 @@ public class UserService {
                 .role(user.getRole().name())
                 .message("Login successful")
                 .build();
+    }
+
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
     }
 }

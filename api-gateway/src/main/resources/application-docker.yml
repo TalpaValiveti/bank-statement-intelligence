@@ -6,15 +6,23 @@ spring:
           uri: http://auth-service:8081
           predicates:
             - Path=/auth/**
+          filters:
+            - name: JwtAuthenticationFilter
         - id: statement-service
           uri: http://statement-service:8082
           predicates:
             - Path=/api/statements/**
+          filters:
+            - name: JwtAuthenticationFilter
         - id: ai-service
           uri: http://ai-service:8083
           predicates:
             - Path=/api/ai/**
+          filters:
+            - name: JwtAuthenticationFilter
         - id: alert-service
           uri: http://alert-service:8084
           predicates:
             - Path=/api/alerts/**
+          filters:
+            - name: JwtAuthenticationFilter

@@ -6,23 +6,39 @@ spring:
     name: api-gateway
   cloud:
     gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
       routes:
         - id: auth-service
           uri: http://localhost:8081
           predicates:
             - Path=/auth/**
+          filters:
+            - name: JwtAuthenticationFilter
         - id: statement-service
           uri: http://localhost:8082
           predicates:
             - Path=/api/statements/**
+          filters:
+            - name: JwtAuthenticationFilter
         - id: ai-service
           uri: http://localhost:8083
           predicates:
             - Path=/api/ai/**
+          filters:
+            - name: JwtAuthenticationFilter
         - id: alert-service
           uri: http://localhost:8084
           predicates:
             - Path=/api/alerts/**
+          filters:
+            - name: JwtAuthenticationFilter
 
 management:
   endpoints:
