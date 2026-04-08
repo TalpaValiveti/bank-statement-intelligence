@@ -16,19 +16,22 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
+        default_schema: ai
   flyway:
     enabled: true
     locations: classpath:db/migration
     schemas: ai
+    create-schemas: true
+    default-schema: ai
 
 oci:
-  tenancy-id: ${OCI_TENANCY_ID:}
-  user-id: ${OCI_USER_ID:}
-  fingerprint: ${OCI_FINGERPRINT:}
-  private-key-path: ${OCI_PRIVATE_KEY_PATH:}
-  region: ${OCI_REGION:us-ashburn-1}
+  tenancy-id: ${OCI_TENANCY_ID:ocid1.tenancy.oc1..aaaaaaaao6bapa2stnvoq6ss73b5mobhkeuljk4fejrwcu6ac2do4pwewbpq}
+  user-id: ${OCI_USER_ID:ocid1.user.oc1..aaaaaaaap7ync37svskzajtq7h7s6umgxhm26ckzde6m7osakqsyvofvqxja}
+  fingerprint: ${OCI_FINGERPRINT:a9:61:4a:f2:f7:3a:97:47:4f:b0:cd:1f:5e:c9:44:71}
+  private-key-path: ${OCI_PRIVATE_KEY_PATH:/Users/talpasaivaliveti/.oci/oci_api_key.pem}
+  region: ${OCI_REGION:us-chicago-1}
   bucket-name: ${OCI_BUCKET_NAME:bank-statements}
+  namespace: ${OCI_NAMESPACE:ax8lnrmxv7qv}
 
 management:
   endpoints:

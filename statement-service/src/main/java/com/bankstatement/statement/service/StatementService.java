@@ -11,14 +11,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +20,7 @@ import java.util.UUID;
 public class StatementService {
 
     private final StatementRepository statementRepository;
+    private final ObjectStorageService objectStorageService;
 
     private static final List<String> ALLOWED_TYPES = Arrays.asList(
             "application/pdf",
@@ -34,30 +29,21 @@ public class StatementService {
             "image/tiff"
     );
 
-    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-    private static final String UPLOAD_DIR = "./uploads";
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
 
-    public StatementUploadResponse uploadStatement(MultipartFile file, Long userId) throws IOException {
+    public StatementUploadResponse uploadStatement(MultipartFile file,
+            Long userId) throws IOException {
         log.info("Uploading statement for userId: {}", userId);
 
         validateFile(file);
 
-        String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
-        String fileExtension = getFileExtension(originalFileName);
-        String storedFileName = UUID.randomUUID().toString() + "." + fileExtension;
-
-        Path uploadPath = Paths.get(UPLOAD_DIR);
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
-
-        Path filePath = uploadPath.resolve(storedFileName);
-        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+        String objectName = objectStorageService.uploadFile(file, userId);
+        String fileUrl = objectStorageService.getObjectUrl(objectName);
 
         Statement statement = Statement.builder()
                 .userId(userId)
-                .fileName(originalFileName)
-                .filePath(filePath.toString())
+                .fileName(StringUtils.cleanPath(file.getOriginalFilename()))
+                .filePath(fileUrl)
                 .fileSize(file.getSize())
                 .fileType(file.getContentType())
                 .status(StatementStatus.UPLOADED)
@@ -73,7 +59,7 @@ public class StatementService {
                 .fileSize(saved.getFileSize())
                 .status(saved.getStatus().name())
                 .uploadedAt(saved.getUploadedAt())
-                .message("Statement uploaded successfully")
+                .message("Statement uploaded successfully to OCI Object Storage")
                 .build();
     }
 
@@ -83,7 +69,8 @@ public class StatementService {
 
     public Statement getStatementById(Long id) {
         return statementRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Statement not found with id: " + id));
+                .orElseThrow(() -> new RuntimeException(
+                        "Statement not found with id: " + id));
     }
 
     private void validateFile(MultipartFile file) {
@@ -91,17 +78,12 @@ public class StatementService {
             throw new IllegalArgumentException("File is empty or null");
         }
         if (file.getSize() > MAX_FILE_SIZE) {
-            throw new IllegalArgumentException("File size exceeds maximum allowed size of 10MB");
+            throw new IllegalArgumentException(
+                    "File size exceeds maximum allowed size of 10MB");
         }
         if (!ALLOWED_TYPES.contains(file.getContentType())) {
-            throw new IllegalArgumentException("File type not allowed. Allowed types: PDF, JPEG, PNG, TIFF");
+            throw new IllegalArgumentException(
+                    "File type not allowed. Allowed types: PDF, JPEG, PNG, TIFF");
         }
-    }
-
-    private String getFileExtension(String fileName) {
-        if (fileName == null || fileName.lastIndexOf(".") == -1) {
-            return "bin";
-        }
-        return fileName.substring(fileName.lastIndexOf(".") + 1);
     }
 }
